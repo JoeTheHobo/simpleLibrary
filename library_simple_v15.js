@@ -61,19 +61,14 @@ Object.prototype.$P = function(x = 1) {
 Object.prototype.$ = function(c) {
     return $(c,this); 
 }
-function $(c,b = document) {
-    if (c.includes(' ')) {
-        let list = c.split(" ");
-        let returnList = [];
-        for (let i = 0; i < list.length; i++) {
-            returnList.push($(list[i]));
-        }
-        return returnList;
+function $(selector,context = document) {
+    if (selector.includes(' ')) {
+        return selector.split(" ").map(s => $(s, context));
     } else {
-        if(!'#.<'.includes(c.charAt(0))) c = '#' + c;
-        if (c.charAt(0) == '<') c = c.charAt(c.length-1) == '>' ? c.substring(1,c.length-1) : c.substring(1,c.length);
-        let a = b.querySelectorAll(c);
-        return a.length == 1 ? (a[0]) : (a.length == 0 ? false : a);
+        if(!'#.<'.includes(selector.charAt(0))) selector = '#' + selector;
+        if (selector.charAt(0) == '<') selector = selector.charAt(selector.length-1) == '>' ? selector.substring(1,selector.length-1) : selector.substring(1,selector.length);
+        const elements  = context.querySelectorAll(selector);
+        return elements.length === 1 ? (elements[0]) : (elements.length === 0 ? false : Array.from(elements));
     }
 }
 Object.prototype.each = function(type,func) {
@@ -427,68 +422,50 @@ Object.prototype.create = function(elem,x = null) {
         -Iteration is passed to your functions parameters
         
 */
-function repeat(count,func,func2,inverse = 1) {
-    let startNum;
+function repeat(count, func, func2, inverse = 1) {
+    let startNum = 0;
     let countTo;
-    let funct;
-    let type = false;
-    let isInverse = 1;
+    let isInverse = inverse;
+    let type = typeof count === 'string' ? 'string' : Array.isArray(count) ? 'array' : count === true ? 'while' : '';
 
-    if (func2 && getType(func2) == "function") {
-        funct = func2;
-        countTo = func;
-        startNum = count;
-        isInverse = inverse;
-    } else {
-        startNum = 0;
-        funct = func;
-        countTo = count;
-        if (getType(count) == "array") {
-            countTo = count.length;
-            type = "array";
-        }
-        if (getType(count) == "string") {
-            countTo = count.length;
-            type = "string";
-        } 
-        if (count === true) {
-            type = "while";
-        }
-
-        if (func2) isInverse = func2;
-    }
-
-    if (type == 'while') {
+    if (type === 'string' || type === 'array') {
+        countTo = count.length;
+    } else if (type === 'while') {
         let i = 0;
-        kill: while(true) {
-            let resolve = func(i)
-            if (resolve === false) break kill;
+        while (true) {
+            let resolve = func(i);
+            if (resolve === false) break;
             i++;
         }
+        return;
     } else {
-        if (isInverse > 0) {
-            kill: for (let i = startNum; i < countTo; i += isInverse) {
-                let wontKill = true;
-
-                if (type == "array") wontKill = funct(count[i],i); 
-                if (type == "string") wontKill = funct(count.charAt(i),i)
-                if (!type) wontKill = funct(i);
-
-                if (wontKill === false) break kill; 
-            }
-        }
-        if (isInverse < 0) {
-            kill: for (let i = countTo-1; i > startNum-1; i += isInverse) {
-                let wontKill = true;
-                if (type == "array") wontKill = funct(count[i],i); 
-                if (type == "string") wontKill = funct(count.charAt(i),i)
-                if (!type) wontKill = funct(i);
-
-                if (wontKill === false) break kill; 
-            }
-        }
+        countTo = count;
     }
 
+    if (func2 && typeof func2 === 'function') {
+        startNum = count;
+        isInverse = inverse;
+        func = func2;
+    }
+
+    let iterator;
+    if (isInverse > 0) {
+        iterator = i => i < countTo;
+    } else {
+        iterator = i => i > startNum - 1;
+    }
+
+    for (let i = startNum; iterator(i); i += isInverse) {
+        let wontKill = true;
+        if (type === 'array') {
+            wontKill = func(count[i], i);
+        } else if (type === 'string') {
+            wontKill = func(count.charAt(i), i);
+        } else {
+            wontKill = func(i);
+        }
+        if (wontKill === false) break;
+    }
 }
 /*
     $MAP Documentation
@@ -655,7 +632,6 @@ slogIncludes = function(text) {
     slog(`.[font-size: 12px; background: silver; color: black;]${text}`)
 }
 
-sloglibrary(15.1,'Simple','JoeTheHobo');
 
 
 
@@ -863,12 +839,240 @@ class Timer {
 
 includesString += ', proTimer V1';
 
+/*
+    Currently Working:
+    innerHTML
+    placeholder
+    src
+    id
+    className
+    href
+    title
+    disabled
+    checked
+    alt
+    target
+    type
 
+    Cant Work:
+    Value
+    maxlength
 
+    Havent Attemped:
+    style
+    min
+    max
+    rows
+    cols
+    readonly
+    contenteditable
+    data-*
+    download
+    rel
+    autocomplete
+    autofocus
+    controls
+    form
+    formaction
+    formenctype
+    formmethod
+    formtarget
+    muliple
+    required
+    tabindex
+    translate
+    aria-*
+    lang
+    scrolling
+    sandbox
+    charset
+    defer
+    async
+    integrity
+    media
+    sizes
+    usemap
+    datetime
+    poster
+    loop
+    muted
+    preload
+    open
+    label
+    selected
+    wrap
+    pattern
+    size
+*/
 
+Object.defineProperty(Array.prototype, 'innerHTML', {
+    get: function() {
+        // When accessing the property, return the innerHTML of the first element
+        return this[0] ? this[0].innerHTML : '';
+    },
+    set: function(html) {
+        // When setting the property, set innerHTML for all elements in the array
+        this.forEach(element => {
+            if (element) {
+                element.innerHTML = html;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'placeholder', {
+    get: function() {
+        // When accessing the property, return the placeholder attribute of the first element
+        return this[0] ? this[0].placeholder : '';
+    },
+    set: function(placeholder) {
+        // When setting the property, set the placeholder attribute for all elements in the array
+        this.forEach(element => {
+            if (element && element.tagName.toLowerCase() === 'input') {
+                element.placeholder = placeholder;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'value', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].value : '';
+    },
+    set: function(value) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.value !== 'undefined') {
+                element.value = value;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'id', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].id : '';
+    },
+    set: function(id) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.id !== 'undefined') {
+                element.id = id;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'className', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].class : '';
+    },
+    set: function(className) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.className !== 'undefined') {
+                element.className = className;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'href', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].class : '';
+    },
+    set: function(href) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.href !== 'undefined') {
+                element.href = href;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'title', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].class : '';
+    },
+    set: function(title) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.title !== 'undefined') {
+                element.title = title;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'disabled', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].class : '';
+    },
+    set: function(disabled) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.disabled !== 'undefined') {
+                element.disabled = disabled;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'checked', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].class : '';
+    },
+    set: function(checked) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.checked !== 'undefined') {
+                element.checked = checked;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'alt', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].class : '';
+    },
+    set: function(alt) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.alt !== 'undefined') {
+                element.alt = alt;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'target', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].class : '';
+    },
+    set: function(target) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.target !== 'undefined') {
+                element.target = target;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'type', {
+    get: function() {
+        // When accessing the property, return the value property of the first element
+        return this[0] ? this[0].class : '';
+    },
+    set: function(type) {
+        // When setting the property, set the value property for all elements in the array
+        this.forEach(element => {
+            if (element && typeof element.type !== 'undefined') {
+                element.type = type;
+            }
+        });
+    }
+});
 
-
-
-
-
+sloglibrary(15.2,'Simple','JoeTheHobo');
 slogIncludes(includesString)
