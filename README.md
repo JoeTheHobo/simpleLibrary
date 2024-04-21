@@ -51,6 +51,4 @@ For detailed documentation and usage examples, refer to the comments within the 
 ## Contribution
 Contributions and feedback are welcome! If you find any issues or have suggestions for improvements, please feel free to create an issue or pull request on the GitHub repository.
 
-## License
-This library is provided under the [MIT License](LICENSE).
 
