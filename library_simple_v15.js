@@ -6,6 +6,12 @@
     Email: johnjonesma@gmail.com
 */
 
+Object.prototype.show = function(as = "block") {
+    this.style.display = as;
+}
+Object.prototype.hide = function() {
+    this.style.display = "none";
+}
 Object.prototype.classRemove = function(classes) {
     if (this.length == undefined) {
         [this].classRemove(classes);
@@ -30,7 +36,6 @@ Object.prototype.classAdd = function(classes) {
     }
     return this;
 }
-
 Array.prototype.classAdd = function(classes) {
     let list = classes.split(" ")
     repeat(this,(object,i) => {
@@ -176,18 +181,40 @@ Array.prototype.rnd = function(amt = false,l=[]) {
     undefined
 */
 function getType(ele,detailed = false) {
-    if (ele == null && ele !== undefined) return "null";
-    if (ele == undefined) return "undefined";
-    if (isClass(ele)) {
-        if (!detailed) return "class";
-        return ele.constructor.name;
-    } 
-    if (ele instanceof HTMLElement) return "HTMLElement";
-    if (typeof ele == 'object' && ele.length) {
-        return "array";   
+    if (ele == null || ele == undefined) {
+        obj = {
+            type: ele+"",
+            value: ele,
+        }
+        return detailed ? obj : ele+"";
     }
-    return typeof ele;
+    
+    let returnName = ele.constructor.name;
+    if (ele instanceof HTMLElement) returnName = "HTMLElement";
+    if (isClass(ele)) returnName = "class";
+
+    if (detailed) {
+        let returnObj = {
+            type: ele.constructor.name.toLowerCase(),
+            detailedType: ele.constructor.name,
+            constructor: ele.constructor,
+            value: ele,
+        }
+        if (returnName == "HTMLElement") {
+            returnObj.type = "htmlelement";
+            returnObj.parent = ele.$P();
+            returnObj.children = ele.children;
+        }
+        if (returnObj.type == "array" || returnObj.type == "string") {
+            returnObj.length = ele.length;
+        }
+
+        if (isClass(ele)) returnObj.type = "class";
+
+        return returnObj;
+    } else return returnName.toLowerCase();
 }
+
 function isClass(obj) {
     const isCtorClass = obj.constructor
         && obj.constructor.toString().substring(0, 5) === 'class'
@@ -807,7 +834,6 @@ includesString += 'Local Storage V3';
     ProTimer
     -Set Timers, Stop Timers
 */
-
 class Timer {
     constructor() {
         this.times = [];
@@ -853,6 +879,8 @@ includesString += ', proTimer V1';
     alt
     target
     type
+    size
+    pattern
 
     Cant Work:
     Value
@@ -901,10 +929,37 @@ includesString += ', proTimer V1';
     label
     selected
     wrap
-    pattern
-    size
 */
 
+
+Object.defineProperty(Array.prototype, 'pattern', {
+    get: function() {
+        // When accessing the property, return the innerHTML of the first element
+        return this[0] ? this[0].pattern : '';
+    },
+    set: function(pattern) {
+        // When setting the property, set innerHTML for all elements in the array
+        this.forEach(element => {
+            if (element) {
+                element.pattern = pattern;
+            }
+        });
+    }
+});
+Object.defineProperty(Array.prototype, 'size', {
+    get: function() {
+        // When accessing the property, return the innerHTML of the first element
+        return this[0] ? this[0].size : '';
+    },
+    set: function(size) {
+        // When setting the property, set innerHTML for all elements in the array
+        this.forEach(element => {
+            if (element) {
+                element.size = size;
+            }
+        });
+    }
+});
 Object.defineProperty(Array.prototype, 'innerHTML', {
     get: function() {
         // When accessing the property, return the innerHTML of the first element
@@ -1073,6 +1128,19 @@ Object.defineProperty(Array.prototype, 'type', {
         });
     }
 });
+
+
+
+Object.prototype.proCSS = function(obj) {
+
+}
+/*
+    item:toItem:toItem
+    [SPEEDs:]
+*/
+$("<div")[0].proCSS({
+    background: "green:red:blue[200s,smooth]",
+})
 
 sloglibrary(15.2,'Simple','JoeTheHobo');
 slogIncludes(includesString)
