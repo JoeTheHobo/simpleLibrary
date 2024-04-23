@@ -38,12 +38,6 @@ Below is a brief overview of the key methods provided in this library:
 ## Introduction
 LS Version 3 (Localstorage V3) is a JavaScript library that provides a simple interface for working with the browser's localStorage. It offers methods for saving, retrieving, deleting, and managing data within the localStorage, with the added feature of organizing data within different storage groups.
 
-## Installation
-To use LS Version 3 in your project, include the `ls.js` file in your HTML document:
-
-```html
-<script src="ls.js"></script>
-```
 
 ## Usage
 
