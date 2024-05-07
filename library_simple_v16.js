@@ -138,9 +138,8 @@ Object.prototype.on = function(what,func,option) {
         }
     } else {
         let actions = what.split(" ");
-        let count = true;
         if (option) {
-            if (option.count) count = option.count;
+
         }
         for (let i = 0; i < actions.length; i++) {
             if (actions[i].orCompare("keydown","keyup") && option.keys) {
@@ -151,11 +150,6 @@ Object.prototype.on = function(what,func,option) {
                 continue;
             }
             this.addEventListener(actions[i],function(e) {
-                if (_type(count).type == "number") {
-                    count--;
-                    console.log('ey')
-                    if (count == 0) this.removeEventListener(actions[i],)
-                }
                 func.call(this,e);
             });
         }
@@ -5260,7 +5254,6 @@ function _convert(string,to,how) {
     }
     if (to.orCompare("js","javascript")) {
         if (_type(string).isJSON) return JSON.parse(string);
-        return how !== false ? eval(string) : "Can't Return";
     }
     if (to.orCompare("json")) {
         return JSON.stringify(string);
@@ -5280,6 +5273,129 @@ function _convert(string,to,how) {
 
         return obj;
     }
+    let conversionSets = [
+        //Temps
+        {from: ["celsius"], to: ["kelvin"], func: (x)=>{return x + 273.15}},
+        {from: ["kelvin"], to: ["celsius"], func: (x)=>{return x - 273.15}},
+        {from: ["fahrenheit"], to: ["celsius"], func: (x)=>{return (x-32)*(5/9)}},
+        {from: ["celsius"], to: ["fahrenheit"], func: (x)=>{return ((9/5) * x) + 32}},
+        {from: ["fahrenheit"], to: ["kelvin"], func: (x)=>{return ((x-32)*(5/9))+273.15}},
+        {from: ["kelvin"], to: ["fahrenheit"], func: (x)=>{return ((x-273.15)*(9/5))+32}},
+
+
+        {from: ["kg","kilogram"], to: ["pounds","lb"], func: (x)=>{return x * 2.2046 }},
+        {from: ["pounds","lb"], to: ["kg","kilogram"], func: (x)=>{return x / 2.2046 }},
+        {from: ["mil","inch","feet","foot","yard","inches","mile","capefoot","rod","angstrom","nanometer","micron","millimeter","centimeter","meter","kilometer","lightyear","lightday","lighthour","lightminute","lightsecond"], to: ["mil","inch","feet","foot","yard","mile","capefoot","rod","angstrom","nanometer","micron","millimeter","centimeter","meter","kilometer","lightyear","lightday","inches","lighthour","lightminute","lightsecond"], func: (x,from,to)=>{return _convertDist(x,from,to) }},
+
+        //Time
+        {from: ["nanosecond","millisecond","second","minute","hour","day","week","fortnight","month","year","decade","century","millennium","eon"], to: ["nanosecond","millisecond","second","minute","hour","day","week","fortnight","month","year","decade","century","millennium","eon"], func: (x,from,to)=>{return _convertTime(x,from,to) }},
+
+        
+    ];
+
+    let iKnowFrom = false;
+    let iKnowTo = false;
+    for (let i = 0; i < conversionSets.length; i++) {
+        let set = conversionSets[i];
+        if (!iKnowFrom && set.from.includes(to)) iKnowFrom = true;
+        if (!iKnowTo && set.to.includes(how)) iKnowTo = true;
+        if ((set.from.includes(to) || set.from.includes(to.subset(0,"*end\\-1"))) && (set.to.includes(how) || set.to.includes(how.subset(0,"*end\\-1")))) return set.func(string,to,how);
+
+
+    }
+
+    if (!iKnowFrom || !iKnowTo)
+        console.warn("Unknown type(s):" + (!iKnowFrom ? " " + to : "") + (!iKnowTo ? " " + how : ""));
+    else
+        console.warn("I can't convert that type. Sorry")
+}
+
+console.log(_convert(12,"inch","feet"));
+
+
+String.prototype.rearrange = function(from,to) {
+    let arr = this.split("");
+    if (!to) {
+        to = from;
+        from = "abcdefghijklmnopqrstuvwxyz0123456789";
+    }
+    from = from.split("");
+    to = to.split("");
+
+    let fromArr = [];
+    for (let i = 0; i < arr.length; i++) {
+        fromArr.push({
+            key: arr[i],
+            value: from[i],
+            index: i,
+        })
+    }
+    let returnString = "";
+    for (let i = 0; i < to.length; i++) {
+        for (let j = 0; j < fromArr.length; j++) {
+            if (to[i] == fromArr[j].value) returnString += this.charAt(fromArr[j].index);
+        }
+    }
+    return returnString;
+}
+
+function _convertDist(number,from,to) {
+    if (from.charAt(from.length-1).toLowerCase() == "s") from = from.subset(0,"*end\\-1")
+        if (to.charAt(to.length-1).toLowerCase() == "s") to = to.subset(0,"*end\\-1")
+    
+        let rateOfMeter = {
+            mil:         39370.1,
+
+            inch:        39.3700787402,
+            inches:      39.3700787402,
+            foot:        3.280839895,
+            feet:        3.280839895,
+
+            yard:        0.9144,
+            mile:        1609.344,
+            capefoot:    0.314856,
+            rod:         5.0292,
+            angstrom:    10000000000,
+            nanometer:   0.000000001,
+            micron:      0.000001,
+            millimeter:  0.001,
+            centimeter:  0.01,
+            meter:       1,
+            kilometer:   1000,
+            lightyear:   9460730472580800,
+            lightday:    25902068371200,
+            lighthour:   1079252848800,
+            lightminute: 17987547480,
+            lightsecond: 299792458,
+        }
+        let meter;
+        meter = Number(number) / rateOfMeter[from];
+        return Number((meter * rateOfMeter[to]).toFixed(10));
+}
+function _convertTime(number,from,to) {
+    if (from.charAt(from.length-1).toLowerCase() == "s") from = from.subset(0,"*end\\-1")
+    if (to.charAt(to.length-1).toLowerCase() == "s") to = to.subset(0,"*end\\-1")
+
+    let ratesOfMonth = {
+        nanosecond: 2592000000000000,
+        millisecond: 2592000000,
+        second: 2592000,
+        minute: 43200,
+        hour: 720,
+        day: 30,
+        week: 4,
+        fortnight: 2,
+        month: 1,
+        year: 1/12,
+        decade: 1/120,
+        century: 1/1200,
+        millennium: 1/12000,
+        eon: 1/12000000000,
+    }
+    let month;
+    month = Number(number) / ratesOfMonth[from];
+    return month * ratesOfMonth[to];
+
 }
 
 
@@ -5290,17 +5406,11 @@ function _convert(string,to,how) {
 
 
 
-
-
-
-
-
-
-
-sloglibrary(16.1,'Simple','John Jones');
+sloglibrary(16.2,'Simple','John Jones');
 let includesString = "-Simple Includes: ";
 for (let i = 0; i < plugingLogs.length; i++) {
     includesString += `${plugingLogs[i].name} V${plugingLogs[i].version}`
     if (i < plugingLogs.length - 1) includesString += ", ";
 }
 slogIncludes(includesString)
+
