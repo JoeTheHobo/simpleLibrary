@@ -131,18 +131,48 @@ Object.prototype.css = function(obj,val) {
     }
     return this;
 }
-Object.prototype.on = function(what,func) {
+Object.prototype.on = function(what,func,option) {
     if (this.length) {
         for (let i = 0; i < this.length; i++) {
-            this[i].on(what,func)
+            this[i].on(what,func,option)
         }
     } else {
         let actions = what.split(" ");
+        let count = true;
+        if (option) {
+            if (option.count) count = option.count;
+        }
         for (let i = 0; i < actions.length; i++) {
-            this.addEventListener(actions[i],func);
+            if (actions[i].orCompare("keydown","keyup") && option.keys) {
+                let keys = option.keys.toLowerCase();
+                this.addEventListener(actions[i],function(e) {
+                    if (keys.includes(e.key.toLowerCase())) func.call(this,e);
+                });
+                continue;
+            }
+            this.addEventListener(actions[i],function(e) {
+                if (_type(count).type == "number") {
+                    count--;
+                    console.log('ey')
+                    if (count == 0) this.removeEventListener(actions[i],)
+                }
+                func.call(this,e);
+            });
         }
     }
 
+    return this;
+}
+Array.prototype.toLowerCase = function() {
+    for (let i = 0; i < this.length; i++) {
+        this[i] = this[i].toLowerCase();
+    }
+    return this;
+}
+Array.prototype.toUpperCase = function() {
+    for (let i = 0; i < this.length; i++) {
+        this[i] = this[i].toUpperCase();
+    }
     return this;
 }
 String.prototype.rnd = function(amt = false,l=[]) {
