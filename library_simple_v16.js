@@ -81,17 +81,55 @@ function $(selector,context = document) {
     }
 }
 
-Object.prototype.css = function(obj) {
+Object.prototype.css = function(obj,val) {
     if (this.length) {
         for (let i = 0; i < this.length; i++) {
-            this[i].css(obj)
+            this[i].css(obj,val)
         }
     }
     else {
+        if (_type(obj).type == "string" && val) {
+            newObj = {};
+            newObj[obj] = val;
+            obj = newObj;
+        }
         for (let i = 0; i < Object.keys(obj).length; i++) {
-            eval('this.style.' + Object.keys(obj)[i] + ' = "' + Object.values(obj)[i] + '"')
+            let key = Object.keys(obj)[i];
+            let value = Object.values(obj)[i];
+            if (_type(value).type == "number") value += "px";
+
+            if (key == "absoluteCenter") {
+                this.css({
+                    position: "absolute",
+                    margin: "auto",
+                    left: value === "horizontal" || value === true ? 0 : '',
+                    right: value === "horizontal" || value === true ? 0 : '',
+                    top: value === "vertical" || value === true ? 0 : '',
+                    bottom: value === "vertical" || value === true ? 0 : ''
+                })
+                continue;
+            }
+            if (key.orCompare("outline","border","display") && value == false) value = "none";
+            if (key.orCompare("color","backgroundColor")) value = _color(value).color; 
+            if (key.includes("margin") && key.length > 6) {
+                if (key.toLowerCase().includes("left")) this.style.marginLeft = value;
+                if (key.toLowerCase().includes("right")) this.style.marginRight = value;
+                if (key.toLowerCase().includes("top")) this.style.marginTop = value;
+                if (key.toLowerCase().includes("bottom")) this.style.marginBottom = value;
+                continue;
+            }
+            if (key.includes("padding") && key.length > 7) {
+                if (key.toLowerCase().includes("left")) this.style.paddingLeft = value;
+                if (key.toLowerCase().includes("right")) this.style.paddingRight = value;
+                if (key.toLowerCase().includes("top")) this.style.paddingTop = value;
+                if (key.toLowerCase().includes("bottom")) this.style.paddingBottom = value;
+                continue;
+            }
+
+            this.style[key] = value;
         }
     }
+    return this;
 }
 Object.prototype.on = function(what,func) {
     if (this.length) {
@@ -5213,6 +5251,17 @@ function _convert(string,to,how) {
         return obj;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
