@@ -139,7 +139,7 @@ Object.prototype.on = function(what,func,option) {
     } else {
         let actions = what.split(" ");
         if (option) {
-
+            if (_type("option").type == "string") option = {keys: [option]}
         }
         for (let i = 0; i < actions.length; i++) {
             if (actions[i].orCompare("keydown","keyup") && option.keys) {
@@ -589,30 +589,7 @@ function repeat(count, func, func2, inverse = 1) {
         if (wontKill === false) break;
     }
 }
-/*
-    $MAP Documentation
-    Example:
-    let map = $MAP(5,5,function(i,j) {
-        return i*j;
-    });
-    Example Written Out
-    $MAP(height,width,(i,j) => { 
-        let cell = null;
-        return cell;
-    })
 
-*/
-function $MAP(y,x=y,func = function() {return null}) {
-    let map = [];
-    for (let i = 0; i < y; i++) {
-        let toPush = [];
-        for (let j = 0; j < x; j++) {
-            toPush.push(func(i,j))
-        }
-        map.push(toPush)
-    }
-    return map;
-}
 
 
 function s_shuffle(array) {
@@ -5202,124 +5179,56 @@ function numberWithCommas(x) {
 
 
 
+function _search(query, array) {
+    // Function to calculate the Levenshtein distance between two strings
+    function levenshteinDistance(s1, s2) {
+        const m = s1.length;
+        const n = s2.length;
+        const dp = Array.from(Array(m + 1), () => Array(n + 1).fill(0));
 
-
-
-
-
-
-
-
-let _ = {
-    setProperty: function(varName, value, options = {},varType) {
-        let setValue = _testVariable(varType,value,varName);
-        let capturedValue;
-        if (setValue !== "//__ERROR__q//") {
-            this[varName] = setValue;
-            capturedValue = setValue;
-        } else {
-            this[varName] = undefined;
-            capturedValue = undefined;
-        }
-        
-        Object.defineProperty(this, varName, {
-            get: function() {
-                return capturedValue;
-            },
-            set: function(newValue) {
-                setValue = _testVariable(varType,newValue,varName);
-                if (setValue !== "//__ERROR__q//") {
-                    value = setValue;
-                    capturedValue = setValue;
+        for (let i = 0; i <= m; i++) {
+            for (let j = 0; j <= n; j++) {
+                if (i === 0) {
+                    dp[i][j] = j;
+                } else if (j === 0) {
+                    dp[i][j] = i;
                 } else {
-                    return;
+                    dp[i][j] = Math.min(
+                        dp[i - 1][j - 1] + (s1[i - 1] === s2[j - 1] ? 0 : 1),
+                        dp[i - 1][j] + 1,
+                        dp[i][j - 1] + 1
+                    );
                 }
-
-                if (options.validate && typeof options.validate === 'function') {
-                    if (!options.validate(setValue)) {
-                        console.warn("Invalid value for " + varName + ": " + setValue);
-                        return;
-                    }
-                }
-                if (options.change && typeof options.change === 'function') {
-                    options.change(setValue);
-                }
-                
-                if (options.bind && Array.isArray(options.bind) && options.bind.length === 2) {
-                    const [domElement, property] = options.bind;
-                    domElement[property] = setValue;
-                    // Add MutationObserver to update the variable when the DOM element property changes
-                    const observer = new MutationObserver(function(mutationsList, observer) {
-                        for (let mutation of mutationsList) {
-                            if (mutation.type === 'attributes' && mutation.attributeName === property) {
-                                this[varName] = domElement[property];
-                            }
-                        }
-                    }.bind(this));
-                    observer.observe(domElement, { attributes: true });
-                }
-
-                
             }
-        });
-        return this;
-    },
-
-    String: function(varName, value, options = {}) {
-        return this.setProperty(varName, value, options,"String");
-    },
-    Number: function(varName, value, options = {}) {
-        return this.setProperty(varName, value, options,"Number");
-    },
-    Bool: function(varName, value, options = {}) {
-        return this.setProperty(varName, value, options, "Boolean");
-    },
-    Var: function(varName, value, options = {}) {
-        return this.setProperty(varName, value, options);
-    },
-    Array: function(varName, value, options = {}) {
-        return this.setProperty(varName, value, options,"Array");
-    },
-
-
-
-    delete: function(name) {
-        if (this.hasOwnProperty(name)) {
-            delete this[name];
-            return true; // Indicate successful deletion
-        } else {
-            console.warn("Variable " + name + " does not exist.");
-            return false; // Indicate variable does not exist
         }
+        return dp[m][n];
     }
-};
-function _testVariable(varType,value,varName) {
-    switch (varType) {
-        case "Number":
-            if (isNaN(Number(value))) {
-                console.warn("Invalid value for " + varName + ": " + value);
-                return "//__ERROR__q//";
-            }
-            return Number(value);
-        case "String":
-            return String(value);
-        case "Array":
-            return Array(value);
-        case "Boolean":
-            return Boolean(value);
-        default:
-            return value;
-    }
+
+    // Find closest match in array to the query string
+    let minDistance = Infinity;
+    let closestMatch = null;
+
+    array.forEach(item => {
+        const distance = levenshteinDistance(query.toLowerCase(), item.toLowerCase());
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestMatch = item;
+        }
+    });
+
+    return closestMatch;
 }
 
-let a = create("input");
-a.id = "inputElement";
-// Example usage:
-_.Var("myVar", "", {
-    change: (newValue) => console.log("Input value changed to: ", newValue),
-    bind: [$("inputElement"), "value"]
-});
-a.on("input",()=>{console.log(_.myVar)})
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -5332,3 +5241,7 @@ for (let i = 0; i < plugingLogs.length; i++) {
     if (i < plugingLogs.length - 1) includesString += ", ";
 }
 slogIncludes(includesString)
+
+
+
+
